@@ -55,7 +55,7 @@
 : "${_per_gov:=no}"
 
 ### Enable TCP_CONG_BBR3
-: "${_tcp_bbr3:=no}"
+: "${_tcp_bbr3:=yes}"
 
 ### Running with a 1000HZ, 750Hz, 600 Hz, 500Hz, 300Hz, 250Hz and 100Hz tick rate
 : "${_HZ_ticks:=1000}"
@@ -93,18 +93,7 @@
 # "full: uses 1 thread for Linking, slow and uses more memory, theoretically with the highest performance gains."
 # "thin: uses multiple threads, faster and uses less memory, may have a lower runtime performance than Full."
 # "none: disable LTO
-: "${_use_llvm_lto:=none}"
-
-# Use suffix -lto only when requested by the user
-# Enabled by default.
-# yes - enable -lto suffix
-# no - disable -lto suffix
-# https://github.com/CachyOS/linux-cachyos/issues/36
-: "${_use_lto_suffix:=yes}"
-
-# Use suffix -gcc when requested by the user
-# This was added to facilitate https://github.com/CachyOS/linux-cachyos/issues/286
-: "${_use_gcc_suffix:=no}"
+: "${_use_llvm_lto:=thin}"
 
 # KCFI is a proposed forward-edge control-flow integrity scheme for
 # Clang, which is more suitable for kernel use than the existing CFI
@@ -136,13 +125,7 @@ _is_lto_kernel() {
     return $?
 }
 
-if _is_lto_kernel && [ "$_use_lto_suffix" = "yes"  ]; then
-    _pkgsuffix="cachyos-${_cpusched}-lto"
-elif ! _is_lto_kernel && [ "$_use_gcc_suffix" = "yes" ]; then
-    _pkgsuffix="cachyos-${_cpusched}-gcc"
-else
-    _pkgsuffix="cachyos-${_cpusched}"
-fi
+_pkgsuffix="888"
 
 pkgbase="linux-$_pkgsuffix"
 _major=6.13
@@ -184,7 +167,8 @@ source=(
     "https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/${_srcname}.tar.xz"
     "config"
     "auto-cpu-optimization.sh"
-    "${_patchsource}/all/0001-cachyos-base-all.patch")
+    "${_patchsource}/all/0001-cachyos-base-all.patch"
+    "btusb-wcn785x.patch")
 
 # LLVM makedepends
 if _is_lto_kernel; then
@@ -703,4 +687,6 @@ b2sums=('2fe8e972e7de458fba6fbb18a08a01f17b49e4a2d31aa1368e50895a2698c6e1aaaf513
         'eb39906b8a7501c290f1778e98d5cc3ab7f89e7ee58d6195d70380059591381882f6c9199c475e579dd3078df5d6a93ff51bc7ead3b5fe83e68c7c3a977d83de'
         '390c7b80608e9017f752b18660cc18ad1ec69f0aab41a2edfcfc26621dcccf5c7051c9d233d9bdf1df63d5f1589549ee0ba3a30e43148509d27dafa9102c19ab'
         '0d00c79b91621b90897e6c553f8adca3441061f4303a9dd0c0da63448477cf3574749889584e3597e49b9b3ec6097ee1d17bedc06eaadb788473122fae96c545'
+        'SKIP'
+        'SKIP'
         '3ae7a58a83c5f36d02a7b5822628fea9a5513ec41e66966678fe17ef9a96af9356b21da4cf5e492188af19747b142e532fe79582062132901e3b8cc80bc5cdd3')
