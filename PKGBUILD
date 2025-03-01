@@ -95,30 +95,6 @@
 # "none: disable LTO
 : "${_use_llvm_lto:=thin}"
 
-# KCFI is a proposed forward-edge control-flow integrity scheme for
-# Clang, which is more suitable for kernel use than the existing CFI
-# scheme used by CONFIG_CFI_CLANG. kCFI doesn't require LTO, doesn't
-# alter function references to point to a jump table, and won't break
-# function address equality.
-: "${_use_kcfi:=no}"
-
-# Build the zfs module in to the kernel
-# WARNING: The ZFS module doesn't build with selected RT sched due to licensing issues.
-# If you use ZFS, refrain from building the RT kernel
-: "${_build_zfs:=no}"
-
-# Builds the nvidia module and package it into a own base
-# This does replace the requirement of nvidia-dkms
-: "${_build_nvidia:=no}"
-
-# Builds the open nvidia module and package it into a own base
-# This does replace the requirement of nvidia-open-dkms
-# Use this only if you have Turing+ GPU
-: "${_build_nvidia_open:=no}"
-
-# Build a debug package with non-stripped vmlinux
-: "${_build_debug:=no}"
-
 # ATTENTION: Do not modify after this line
 _is_lto_kernel() {
     [[ "$_use_llvm_lto" = "thin" || "$_use_llvm_lto" = "full" ]]
@@ -128,17 +104,17 @@ _is_lto_kernel() {
 _pkgsuffix="888"
 
 pkgbase="linux-$_pkgsuffix"
-_major=6.13
-_minor=5
+_major=6.14
+_minor=0
 #_minorc=$((_minor+1))
-#_rcver=rc8
-pkgver=${_major}.${_minor}
-_stable=${_major}.${_minor}
+_rcver=rc4
+pkgver=${_major}.${_rcver}
+#_stable=${_major}.${_minor}
 #_stable=${_major}
-#_stablerc=${_major}-${_rcver}
+_stable=${_major}-${_rcver}
 _srcname=linux-${_stable}
 #_srcname=linux-${_major}
-pkgdesc='Linux BORE + Cachy Sauce scheduler Kernel by CachyOS with other patches and improvements'
+pkgdesc='Linux BORE + LTO + Cachy Sauce Kernel by CachyOS with other patches and improvements - Release Candidate'
 pkgrel=1
 _kernver="$pkgver-$pkgrel"
 _kernuname="${pkgver}-${_pkgsuffix}"
@@ -160,11 +136,8 @@ makedepends=(
 )
 
 _patchsource="https://raw.githubusercontent.com/cachyos/kernel-patches/master/${_major}"
-_nv_ver=570.86.16
-_nv_pkg="NVIDIA-Linux-x86_64-${_nv_ver}"
-_nv_open_pkg="open-gpu-kernel-modules-${_nv_ver}"
 source=(
-    "https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/${_srcname}.tar.xz"
+    "https://github.com/torvalds/linux/archive/refs/tags/v${_major}-${_rcver}.tar.gz"
     "config"
     "auto-cpu-optimization.sh"
     "${_patchsource}/all/0001-cachyos-base-all.patch"
@@ -182,29 +155,6 @@ if _is_lto_kernel; then
     )
 fi
 
-# WARNING The ZFS module doesn't build with selected RT sched due to licensing issues.
-if [[ "$_cpusched" = "rt" || "$_cpusched" = "rt-bore" ]]; then
-    unset _build_zfs
-fi
-
-# ZFS support
-if [ "$_build_zfs" = "yes" ]; then
-    makedepends+=(git)
-    source+=("git+https://github.com/cachyos/zfs.git#commit=a034b8e60dbddde9cb16476f341c48a9dfe886b8")
-fi
-
-# NVIDIA pre-build module support
-if [ "$_build_nvidia" = "yes" ]; then
-    source+=("https://us.download.nvidia.com/XFree86/Linux-x86_64/${_nv_ver}/${_nv_pkg}.run"
-             "${_patchsource}/misc/nvidia/0001-Make-modeset-and-fbdev-default-enabled.patch")
-fi
-
-if [ "$_build_nvidia_open" = "yes" ]; then
-    source+=("nvidia-open-${_nv_ver}.tar.gz::https://github.com/NVIDIA/open-gpu-kernel-modules/archive/refs/tags/${_nv_ver}.tar.gz"
-             "${_patchsource}/misc/nvidia/0001-Make-modeset-and-fbdev-default-enabled.patch"
-             "${_patchsource}/misc/nvidia/0003-Add-IBT-Support.patch")
-fi
-
 ## List of CachyOS schedulers
 case "$_cpusched" in
     cachyos|bore|rt-bore|hardened) # CachyOS Scheduler (BORE)
@@ -213,8 +163,6 @@ case "$_cpusched" in
         source+=("${_patchsource}/sched/0001-prjc-cachy.patch");;
     hardened) ## Hardened Patches
         source+=("${_patchsource}/misc/0001-hardened.patch");;
-    rt|rt-bore) ## RT patches
-        source+=("${_patchsource}/misc/0001-rt-i915.patch");;
 esac
 
 export KBUILD_BUILD_HOST=cachyos
@@ -282,12 +230,6 @@ prepare() {
     esac
 
     echo "Selecting ${_cpusched^^} CPU scheduler..."
-
-    ### Enable KCFI
-    if [ "$_use_kcfi" = "yes" ]; then
-        echo "Enabling kCFI"
-        scripts/config -e ARCH_SUPPORTS_CFI_CLANG -e CFI_CLANG -e CFI_AUTO_DEFAULT
-    fi
 
     ### Select LLVM level
     case "$_use_llvm_lto" in
@@ -438,21 +380,6 @@ prepare() {
     echo "Save configuration for later reuse..."
     local basedir="$(dirname "$(readlink "${srcdir}/config")")"
     cat .config > "${basedir}/config-${pkgver}-${pkgrel}${pkgbase#linux}"
-
-    if [ "$_build_nvidia" = "yes" ]; then
-        cd "${srcdir}"
-        sh "${_nv_pkg}.run" --extract-only
-
-        # Use fbdev and modeset as default
-        patch -Np1 -i "${srcdir}/0001-Make-modeset-and-fbdev-default-enabled.patch" -d "${srcdir}/${_nv_pkg}/kernel"
-    fi
-
-    if [ "$_build_nvidia_open" = "yes" ]; then
-        # Use fbdev and modeset as default
-        patch -Np1 -i "${srcdir}/0001-Make-modeset-and-fbdev-default-enabled.patch" -d "${srcdir}/${_nv_open_pkg}/kernel-open"
-        # Fix for https://bugs.archlinux.org/task/74886
-        patch -Np1 --no-backup-if-mismatch -i "${srcdir}/0003-Add-IBT-Support.patch" -d "${srcdir}/${_nv_open_pkg}"
-    fi
 }
 
 build() {
@@ -466,33 +393,6 @@ build() {
        SYSSRC="${srcdir}/${_srcname}"
        SYSOUT="${srcdir}/${_srcname}"
     )
-    if [ "$_build_nvidia" = "yes" ]; then
-        MODULE_FLAGS+=(NV_EXCLUDE_BUILD_MODULES='__EXCLUDE_MODULES')
-        cd "${srcdir}/${_nv_pkg}/kernel"
-        make "${BUILD_FLAGS[@]}" "${MODULE_FLAGS[@]}" -j"$(nproc)" modules
-
-    fi
-
-    if [ "$_build_nvidia_open" = "yes" ]; then
-        cd "${srcdir}/${_nv_open_pkg}"
-        MODULE_FLAGS+=(IGNORE_CC_MISMATCH=yes)
-        CFLAGS= CXXFLAGS= LDFLAGS= make "${BUILD_FLAGS[@]}" "${MODULE_FLAGS[@]}" -j"$(nproc)" modules
-    fi
-
-    if [ "$_build_zfs" = "yes" ]; then
-        cd ${srcdir}/"zfs"
-
-        local CONFIGURE_FLAGS=()
-        [ "$_use_llvm_lto" != "none" ] && CONFIGURE_FLAGS+=("KERNEL_LLVM=1")
-
-        ./autogen.sh
-        sed -i "s|\$(uname -r)|${_kernuname}|g" configure
-        ./configure "${CONFIGURE_FLAGS[@]}" --prefix=/usr --sysconfdir=/etc --sbindir=/usr/bin \
-            --libdir=/usr/lib --datadir=/usr/share --includedir=/usr/include \
-            --with-udevdir=/lib/udev --libexecdir=/usr/lib/zfs --with-config=kernel \
-            --with-linux="${srcdir}/$_srcname"
-        make "${BUILD_FLAGS[@]}"
-    fi
 
 }
 
@@ -528,6 +428,10 @@ _package() {
 _package-headers() {
     pkgdesc="Headers and scripts for building modules for the $pkgdesc kernel"
     depends=('pahole' "${pkgbase}")
+
+    if _is_lto_kernel; then
+        depends+=(clang llvm lld)
+    fi
 
     cd "${_srcname}"
     local builddir="$pkgdir/usr/lib/modules/$(<version)/build"
@@ -610,72 +514,8 @@ _package-headers() {
     ln -sr "$builddir" "$pkgdir/usr/src/$pkgbase"
 }
 
-_package-dbg(){
-    pkgdesc="Non-stripped vmlinux file for the $pkgdesc kernel"
-    depends=("${pkgbase}-headers")
-
-    cd "${_srcname}"
-    mkdir -p "$pkgdir/usr/src/debug/${pkgbase}"
-    install -Dt "$pkgdir/usr/src/debug/${pkgbase}" -m644 vmlinux
-}
-
-_package-zfs(){
-    pkgdesc="zfs module for the $pkgdesc kernel"
-    depends=('pahole' "${pkgbase}=${_kernver}")
-    provides=('ZFS-MODULE')
-    license=('CDDL')
-
-    cd "$_srcname"
-    local modulesdir="$pkgdir/usr/lib/modules/$(<version)"
-
-    cd "${srcdir}/zfs"
-    install -dm755 "${modulesdir}"
-    install -m644 module/*.ko "${modulesdir}"
-    find "$pkgdir" -name '*.ko' -exec zstd --rm -19 -T0 {} +
-    #  sed -i -e "s/EXTRAMODULES='.*'/EXTRAMODULES='${pkgver}-${pkgbase}'/" "$startdir/zfs.install"
-}
-
-_package-nvidia(){
-    pkgdesc="nvidia module of ${_nv_ver} driver for the ${pkgbase} kernel"
-    depends=("$pkgbase=$_kernver" "nvidia-utils=${_nv_ver}" "libglvnd")
-    provides=('NVIDIA-MODULE')
-    conflicts=("$pkgbase-nvidia-open")
-    license=('custom')
-
-    cd "$_srcname"
-    local modulesdir="$pkgdir/usr/lib/modules/$(<version)"
-
-    cd "${srcdir}/${_nv_pkg}"
-    install -dm755 "${modulesdir}"
-    install -m644 kernel/*.ko "${modulesdir}"
-    install -Dt "$pkgdir/usr/share/licenses/${pkgname}" -m644 LICENSE
-    find "$pkgdir" -name '*.ko' -exec zstd --rm -19 -T0 {} +
-}
-
-_package-nvidia-open(){
-    pkgdesc="nvidia open modules of ${_nv_ver} driver for the ${pkgbase} kernel"
-    depends=("$pkgbase=$_kernver" "nvidia-utils=${_nv_ver}" "libglvnd")
-    provides=('NVIDIA-MODULE')
-    conflicts=("$pkgbase-nvidia")
-    license=('MIT AND GPL-2.0-only')
-
-    cd "$_srcname"
-    local modulesdir="$pkgdir/usr/lib/modules/$(<version)"
-
-    cd "${srcdir}/${_nv_open_pkg}"
-    install -dm755 "${modulesdir}"
-    install -m644 kernel-open/*.ko "${modulesdir}"
-    install -Dt "$pkgdir/usr/share/licenses/${pkgname}" -m644 COPYING
-
-    find "$pkgdir" -name '*.ko' -exec zstd --rm -19 -T0 {} +
-}
-
 pkgname=("$pkgbase")
-[ "$_build_debug" = "yes" ] && pkgname+=("$pkgbase-dbg")
 pkgname+=("$pkgbase-headers")
-[ "$_build_zfs" = "yes" ] && pkgname+=("$pkgbase-zfs")
-[ "$_build_nvidia" = "yes" ] && pkgname+=("$pkgbase-nvidia")
-[ "$_build_nvidia_open" = "yes" ] && pkgname+=("$pkgbase-nvidia-open")
 for _p in "${pkgname[@]}"; do
     eval "package_$_p() {
     $(declare -f "_package${_p#$pkgbase}")
