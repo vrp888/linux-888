@@ -172,18 +172,18 @@ export KBUILD_BUILD_TIMESTAMP="$(date -Ru${SOURCE_DATE_EPOCH:+d @$SOURCE_DATE_EP
 _die() { error "$@" ; exit 1; }
 
 prepare() {
-    git clone --depth 1 --branch master https://git.kernel.org/pub/scm/linux/kernel/git/next/linux-next.git
+    git clone --depth 1 --branch ath-next https://git.kernel.org/pub/scm/linux/kernel/git/ath/ath.git
     cd "$_srcname"
 
     echo "Setting version..."
     echo "-$pkgrel" > localversion.10-pkgrel
     echo "${pkgbase#linux}" > localversion.20-pkgname
 
-    echo "Applying ath patches from linux-next..."
+    echo "Applying ath patches from ath-next..."
     rm -rf "${srcdir}/${_srcname}/Documentation/devicetree/bindings/net/wireless"
     rm -rf "${srcdir}/${_srcname}/drivers/net/wireless/ath"
-    cp -r "${srcdir}/linux-next/Documentation/devicetree/bindings/net/wireless" "${srcdir}/${_srcname}/Documentation/devicetree/bindings/net/"
-    cp -r "${srcdir}/linux-next/drivers/net/wireless/ath" "${srcdir}/${_srcname}/drivers/net/wireless/"
+    cp -r "${srcdir}/ath/Documentation/devicetree/bindings/net/wireless" "${srcdir}/${_srcname}/Documentation/devicetree/bindings/net/"
+    cp -r "${srcdir}/ath/drivers/net/wireless/ath" "${srcdir}/${_srcname}/drivers/net/wireless/"
 
     local src
     for src in "${source[@]}"; do
