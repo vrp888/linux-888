@@ -1,0 +1,9 @@
+src
+pkg
+*.tar.gz
+*.pkg.tar*
+*.AppImage
+*.tar.xz
+0001-*.patch
+dkms-clang.patch
+config-*
