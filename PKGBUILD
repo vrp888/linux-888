@@ -31,7 +31,8 @@ source=(
     "${_cfgsource}/linux-cachyos-bore/auto-cpu-optimization.sh"
     "${_patchsource}/all/0001-cachyos-base-all.patch"
     "btusb-wcn785x.patch"
-    "Workaround-for-idle_exit_counter.patch")
+    "Workaround-for-idle_exit_counter.patch"
+    "Workaround-for-dml2.patch")
 
 makedepends+=(clang llvm lld)
 source+=("${_patchsource}/misc/dkms-clang.patch")
@@ -254,6 +255,7 @@ for _p in "${pkgname[@]}"; do
 done
 
 b2sums=('SKIP'
+        'SKIP'
         'SKIP'
         'SKIP'
         'SKIP'
