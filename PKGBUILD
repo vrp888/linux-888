@@ -414,7 +414,17 @@ prepare() {
             -d TMPFS_QUOTA \
             -d ZSWAP \
             -d BTRFS_FS \
-            -d HAMRADIO
+            -d HAMRADIO \
+            -d KFENCE \
+            -d SOFTLOCKUP_DETECTOR \
+            -d HARDLOCKUP_DETECTOR \
+            -d DETECT_HUNG_TASK \
+            -d SCHEDSTATS \
+            -d TASKSTATS \
+            -d IP_FIB_TRIE_STATS \
+            -d PAGE_POOL_STATS \
+            -d DMABUF_SYSFS_STATS \
+            -d XFS_ONLINE_SCRUB_STATS
 
   # Platform-specific
   scripts/config -d CHROME_PLATFORMS \
@@ -422,6 +432,7 @@ prepare() {
             -d MACINTOSH_DRIVERS \
             -d MELLANOX_PLATFORM \
             -d SURFACE_PLATFORMS \
+            -d SOC_TI \
             -d X86_PLATFORM_DRIVERS_DELL \
             -d X86_PLATFORM_DRIVERS_HP
 
