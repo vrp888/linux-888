@@ -1,9 +1,8 @@
 src
 pkg
-*.tar.gz
-*.pkg.tar*
-*.AppImage
-*.tar.xz
+*.tar.*
 0001-*.patch
 dkms-clang.patch
-config-*
+config*
+*.sh
+*.py
