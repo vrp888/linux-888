@@ -92,7 +92,6 @@ prepare() {
 
   scripts/config -d HZ_PERIODIC \
             -d NO_HZ_IDLE \
-            -d CONTEXT_TRACKING_FORCE \
             -e NO_HZ_FULL_NODEF \
             -e NO_HZ_FULL \
             -e NO_HZ \
@@ -109,7 +108,6 @@ prepare() {
             -e CC_OPTIMIZE_FOR_PERFORMANCE_O3
 
   scripts/config -m TCP_CONG_CUBIC \
-            -d DEFAULT_CUBIC \
             -e TCP_CONG_BBR \
             -e DEFAULT_BBR \
             --set-str DEFAULT_TCP_CONG bbr \
@@ -146,7 +144,6 @@ prepare() {
             -d NET_SCH_NETEM \
             -d NET_SCH_DRR \
             -d NET_SCH_MQPRIO \
-            -d NET_SCH_MQPRIO_LIB \
             -d NET_SCH_SKBPRIO \
             -d NET_SCH_CHOKE \
             -d NET_SCH_QFQ \
@@ -362,9 +359,7 @@ prepare() {
             -d HIBERNATION \
             -d NETWORK_FILESYSTEMS \
             -d MEMORY_FAILURE \
-            -d ANDROID_BINDER_IPC \
-            -d ANDROID_BINDERFS \
-            -d ANDROID_BINDER_DEVICES
+            -d ANDROID_BINDER_IPC
             
   # Unused devices
   scripts/config -d USB_NET_AX8817X \
@@ -373,7 +368,6 @@ prepare() {
               -d USB_NET_CDC_SUBSET \
               -d USB_NET_ZAURUS \
               -d SENSORS_SPD5118 \
-              -d CONFIG_XFS_ONLINE_SCRUB_STATS \
               -d USB_NET_CDC_NCM \
               -d FUSION \
               -d WLAN_VENDOR_ATMEL \
@@ -447,9 +441,7 @@ prepare() {
 
   # Debugging
   scripts/config -d PM_DEBUG \
-            -d PM_SLEEP_DEBUG \
             -d ACPI_DEBUG \
-            -d FW_LOADER_DEBUG \
             -d PNP_DEBUG_MESSAGES \
             -d DM_DEBUG \
             -d ATH12K_DEBUG \
@@ -469,7 +461,6 @@ prepare() {
   echo "Rewrite configuration..."
   yes "" | make "${BUILD_FLAGS[@]}" prepare >/dev/null
   yes "" | make "${BUILD_FLAGS[@]}" config >/dev/null
-  diff -u ../config .config || :
 
   ### Prepared version
   make -s kernelrelease > version
