@@ -385,7 +385,11 @@ prepare() {
               -d WLAN_VENDOR_TI \
               -d WLAN_VENDOR_ZYDAS \
               -d WLAN_VENDOR_QUANTENNA \
-              -d MEGARAID_NEWGEN
+              -d MEGARAID_NEWGEN \
+              -d INPUT_JOYDEV \
+              -d INPUT_JOYSTICK \
+              -d INPUT_TABLET \
+              -d INPUT_TOUCHSCREEN
 
   # Performance
   scripts/config -d AUDIT \
