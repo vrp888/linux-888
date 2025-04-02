@@ -321,7 +321,6 @@ prepare() {
               -m DM_INTEGRITY \
               -m HW_RANDOM_INTEL \
               -m HW_RANDOM_AMD \
-              -m HID_APPLE \
               -m HID_LOGITECH_DJ \
               -e HID_BPF \
               -e LOGITECH_FF \
@@ -389,7 +388,8 @@ prepare() {
               -d INPUT_JOYDEV \
               -d INPUT_JOYSTICK \
               -d INPUT_TABLET \
-              -d INPUT_TOUCHSCREEN
+              -d INPUT_TOUCHSCREEN \
+              -d HID_APPLE
 
   # Performance
   scripts/config -d AUDIT \
